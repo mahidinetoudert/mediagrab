@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediaGrab - Telechargeur Universel</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    min-height: 100vh;
+    color: #fff;
+    line-height: 1.6;
+  }
+  .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+  header { text-align: center; padding: 40px 0 20px; }
+  header h1 {
+    font-size: 2.5rem;
+    background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  header p { color: #aaa; margin-top: 10px; font-size: 0.95rem; }
+  .ad-slot {
+    max-width: 728px; min-height: 90px; margin: 20px auto;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.03); border-radius: 12px; overflow: hidden;
+  }
+  .card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px; padding: 30px; margin: 20px 0;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .input-group { display: flex; gap: 10px; }
+  #urlInput {
+    flex: 1; padding: 16px 20px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 12px; color: #fff; font-size: 1rem; outline: none;
+    transition: border 0.3s;
+  }
+  #urlInput:focus { border-color: #00d4ff; }
+  #urlInput::placeholder { color: #777; }
+  .btn-main {
+    padding: 16px 32px;
+    background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+    border: none; border-radius: 12px; color: #fff;
+    font-size: 1rem; font-weight: 600; cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.3s;
+  }
+  .btn-main:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,212,255,0.4); }
+  .btn-main:disabled { opacity: 0.6; cursor: wait; }
+  .loader { display: none; text-align: center; padding: 30px; }
+  .loader.active { display: block; }
+  .spinner {
+    width: 50px; height: 50px;
+    border: 4px solid rgba(255,255,255,0.1);
+    border-top-color: #00d4ff; border-radius: 50%;
+    animation: spin 1s linear infinite; margin: 0 auto 15px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .result { display: none; margin-top: 20px; }
+  .result.active { display: block; }
+  .media-preview {
+    display: flex; gap: 15px; padding: 15px;
+    background: rgba(0,0,0,0.3); border-radius: 12px; margin-bottom: 15px;
+  }
+  .media-preview img { width: 140px; height: 80px; object-fit: cover; border-radius: 8px; }
+  .media-preview .info h3 { font-size: 1rem; margin-bottom: 5px; }
+  .media-preview .info p { color: #aaa; font-size: 0.85rem; }
+  .format-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 15px; background: rgba(255,255,255,0.05);
+    border-radius: 10px; margin-bottom: 8px;
+  }
+  .format-item small { color: #888; }
+  .btn-download {
+    padding: 8px 18px;
+    background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+    border: none; border-radius: 8px; color: #fff;
+    font-weight: 600; font-size: 0.9rem; cursor: pointer; text-decoration: none;
+  }
+  .btn-download:hover { opacity: 0.9; }
+  .features {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px; margin: 30px 0;
+  }
+  .feature {
+    padding: 20px; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 15px; text-align: center;
+  }
+  .feature .icon { font-size: 2rem; margin-bottom: 8px; }
+  .feature h3 { font-size: 0.95rem; margin-bottom: 5px; }
+  .feature p { color: #aaa; font-size: 0.8rem; }
+  .error {
+    padding: 15px; background: rgba(255,71,87,0.15);
+    border: 1px solid rgba(255,71,87,0.4);
+    border-radius: 10px; color: #ff4757; text-align: center;
+  }
+  footer { text-align: center; padding: 30px 0; color: #666; font-size: 0.85rem; }
+  @media (max-width: 600px) {
+    header h1 { font-size: 1.8rem; }
+    .input-group { flex-direction: column; }
+    .media-preview { flex-direction: column; }
+    .media-preview img { width: 100%; height: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="ad-slot" id="adsterra-top"></div>
+
+<div class="container">
+  <header>
+    <h1>MediaGrab</h1>
+    <p>Telechargez videos et audio depuis YouTube, TikTok, Instagram et plus</p>
+  </header>
+
+  <div class="card">
+    <div class="input-group">
+      <input type="url" id="urlInput" placeholder="Collez votre lien (YouTube, TikTok, Instagram...)">
+      <button class="btn-main" id="fetchBtn">Analyser</button>
+    </div>
+    <div class="loader" id="loader">
+      <div class="spinner"></div>
+      <p>Analyse en cours...</p>
+    </div>
+    <div class="result" id="result"></div>
+  </div>
+
+  <div class="ad-slot" id="adsterra-middle"></div>
+
+  <div class="features">
+    <div class="feature">
+      <div class="icon">&#9889;</div>
+      <h3>Ultra rapide</h3>
+      <p>Analyse en quelques secondes</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#127919;</div>
+      <h3>Multi-plateformes</h3>
+      <p>YouTube, TikTok, Instagram...</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#128274;</div>
+      <h3>100% gratuit</h3>
+      <p>Aucune inscription</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#128241;</div>
+      <h3>Mobile friendly</h3>
+      <p>Fonctionne partout</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>&copy; 2026 MediaGrab - Tous droits reserves</p>
+  <p style="margin-top:8px;">Usage personnel uniquement</p>
+</footer>
+
+<script>
+const urlInput = document.getElementById('urlInput');
+const fetchBtn = document.getElementById('fetchBtn');
+const loader = document.getElementById('loader');
+const result = document.getElementById('result');
+
+fetchBtn.addEventListener('click', analyze);
+urlInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') analyze(); });
+
+async function analyze() {
+  const url = urlInput.value.trim();
+  if (!url) { showError('Collez une URL valide'); return; }
+
+  if (window.Adsterra) window.Adsterra.triggerPopunder();
+
+  loader.classList.add('active');
+  result.classList.remove('active');
+  fetchBtn.disabled = true;
+
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url: url})
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Erreur analyse');
+    showResult(data.data, url);
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    loader.classList.remove('active');
+    fetchBtn.disabled = false;
+  }
+}
+
+function showResult(media, url) {
+  const duration = media.duration ? formatDuration(media.duration) : '';
+  const formats = (media.formats || []).slice(0, 8);
+
+  var html = '<div class="media-preview">';
+  if (media.thumbnail) html += '<img src="' + media.thumbnail + '" alt="preview">';
+  html += '<div class="info"><h3>' + escapeHtml(media.title || 'Sans titre') + '</h3>';
+  html += '<p>' + (media.platform || '') + (duration ? ' - ' + duration : '') + '</p></div></div>';
+  html += '<h4 style="margin-bottom:10px;">Choisir un format :</h4>';
+
+  formats.forEach(function(f) {
+    html += '<div class="format-item">';
+    html += '<span>' + f.quality + ' <small>(' + f.ext + (f.sizeMB ? ' - ' + f.sizeMB + ' MB' : '') + ')</small></span>';
+    html += '<button class="btn-download" onclick="downloadFormat(\'' + url + '\', \'' + f.id + '\', this)">Telecharger</button>';
+    html += '</div>';
+  });
+
+  result.innerHTML = html;
+  result.classList.add('active');
+}
+
+async function downloadFormat(url, formatId, btn) {
+  btn.textContent = '...';
+  btn.disabled = true;
+
+  if (window.Adsterra) window.Adsterra.triggerPopunder();
+
+  try {
+    const res = await fetch('/api/download', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url: url, formatId: formatId})
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    window.open(data.downloadUrl, '_blank');
+    btn.textContent = 'OK';
+  } catch (err) {
+    btn.textContent = 'Erreur';
+    console.error(err);
+  }
+}
+
+function showError(msg) {
+  result.innerHTML = '<div class="error">' + escapeHtml(msg) + '</div>';
+  result.classList.add('active');
+}
+
+function formatDuration(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, function(c) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+</script>
+
+</body>
+</html>
