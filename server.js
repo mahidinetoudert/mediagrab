@@ -7,6 +7,7 @@ const fs = require('fs');
 const youtubedl = require('youtube-dl-exec');
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
