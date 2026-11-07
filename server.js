@@ -69,6 +69,7 @@ app.post('/api/analyze', async (req, res) => {
   skipDownload: true,
   preferFreeFormats: true,
   cookies: 'youtube.com_cookies.txt',
+      addHeader: ['user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'],
 });
 
     const formats = (info.formats || [])
@@ -120,7 +121,8 @@ app.post('/api/download', async (req, res) => {
       skipDownload: true,
       format: 'best',
       mergeOutputFormat: 'mp4',
-     scookies: 'youtube.com_cookies.txt',
+     cookies: 'youtube.com_cookies.txt',
+      addHeader: ['user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'],
     });
 
     const chosen = (info.formats || [])[0] || info;
